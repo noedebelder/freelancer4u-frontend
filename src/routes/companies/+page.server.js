@@ -1,13 +1,21 @@
 import axios from "axios";
-import { fail } from '@sveltejs/kit';
+import { fail, error } from '@sveltejs/kit';
 import { API_BASE_URL } from '$app/env/private';
 
-export async function load() {
+export async function load({ locals }) {
+    const jwt_token = locals.jwt_token;
+
+    if (!jwt_token) {
+        return {
+            companies: []
+        };
+    }
 
     try {
         const companiesResponse = await axios({
             method: "get",
             url: `${API_BASE_URL}/api/company`,
+            headers: { Authorization: "Bearer " + jwt_token },
         })
 
         return {
@@ -20,7 +28,12 @@ export async function load() {
 }
 
 export const actions = {
-    createCompany: async ({ request }) => {
+    createCompany: async ({ request, locals }) => {
+        const jwt_token = locals.jwt_token;
+
+        if (!jwt_token) {
+            throw error(401, 'Authentication required');
+        }
 
         const data = await request.formData();
         const company = {
@@ -34,6 +47,7 @@ export const actions = {
                 url: `${API_BASE_URL}/api/company`,
                 headers: {
                     "Content-Type": "application/json",
+                    Authorization: "Bearer " + jwt_token,
                 },
                 data: company,
             });
