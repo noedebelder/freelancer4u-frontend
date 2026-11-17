@@ -4,7 +4,8 @@
   let { data, form } = $props();
 
   // Use $derived to keep variables in sync with page data updates
-  let companies = $derived(data.companies ?? []);
+  let { companies = [], currentPage, nrOfPages = 0 } = $derived(data);
+  const pageSize = 4;
 
 </script>
 
@@ -67,3 +68,23 @@
     {/each}
   </tbody>
 </table>
+
+<nav>
+  <ul class="pagination">
+    {#each Array(nrOfPages) as _, i}
+      <li class="page-item">
+        <a
+          class="page-link"
+          class:active={currentPage == i + 1}
+          href="/companies?pageNumber={i + 1}&pageSize={pageSize}">{i + 1}</a
+        >
+      </li>
+    {/each}
+  </ul>
+</nav>
+
+<style>
+  .page-link:focus {
+    box-shadow: none;
+  }
+</style>

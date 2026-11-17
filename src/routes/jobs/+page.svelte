@@ -4,12 +4,13 @@
   let { data, form } = $props();
 
   // Use $derived to keep variables in sync with page data updates
-  let companies = $derived(data.companies);
-  let jobs = $derived(data.jobs);
+  let { user, isAuthenticated, companies, jobs, currentPage, nrOfPages } =
+    $derived(data);
+  const pageSize = 4;
 
 </script>
 
-{#if data.user.user_roles && data.user.user_roles.includes('admin')}
+{#if user.user_roles && user.user_roles.includes('admin')}
 <h1 class="mt-3">Create Job</h1>
 
 {#if form?.success}
@@ -96,6 +97,8 @@
       <th scope="col">Earnings</th>
       <th scope="col">State</th>
       <th scope="col">CompanyId</th>
+      <th scope="col">FreelancerId</th>
+      <th scope="col">Actions</th>
     </tr>
   </thead>
   <tbody>
@@ -107,7 +110,56 @@
         <td>{job.earnings}</td>
         <td>{job.jobState}</td>
         <td>{job.companyId}</td>
+        <td>{job.freelancerId}</td>
+        <td>
+          {#if job.jobState === "ASSIGNED"}
+            <span class="badge bg-secondary">Assigned</span>
+            {#if job.freelancerId === user.email}
+              <form
+                method="POST"
+                action="?/completeMyJob"
+                use:enhance
+                style="display:inline"
+              >
+                <input type="hidden" name="jobId" value={job.id} />
+                <button class="btn btn-primary btn-sm">Complete Job</button>
+              </form>
+            {/if}
+          {:else if job.jobState === "DONE"}
+            <span class="badge bg-secondary">Done</span>
+          {:else if job.freelancerId === null}
+            <form
+              method="POST"
+              action="?/assignToMe"
+              use:enhance
+              style="display:inline"
+            >
+              <input type="hidden" name="jobId" value={job.id} />
+              <button class="btn btn-primary btn-sm">Assign to me</button>
+            </form>
+          {/if}
+        </td>
       </tr>
     {/each}
   </tbody>
 </table>
+
+<nav>
+  <ul class="pagination">
+    {#each Array(nrOfPages) as _, i}
+      <li class="page-item">
+        <a
+          class="page-link"
+          class:active={currentPage == i + 1}
+          href="/jobs?pageNumber={i + 1}&pageSize={pageSize}">{i + 1}</a
+        >
+      </li>
+    {/each}
+  </ul>
+</nav>
+
+<style>
+  .page-link:focus {
+    box-shadow: none;
+  }
+</style>

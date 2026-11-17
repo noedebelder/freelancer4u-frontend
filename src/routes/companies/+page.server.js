@@ -2,24 +2,32 @@ import axios from "axios";
 import { fail, error } from '@sveltejs/kit';
 import { API_BASE_URL } from '$app/env/private';
 
-export async function load({ locals }) {
+export async function load({ url, locals }) {
     const jwt_token = locals.jwt_token;
+    const currentPage = parseInt(url.searchParams.get('pageNumber') || '1');
+    const pageSize = parseInt(url.searchParams.get('pageSize') || '4');
 
     if (!jwt_token) {
         return {
-            companies: []
+            companies: [],
+            nrOfPages: 0,
+            currentPage
         };
     }
+
+    const query = `?pageSize=${pageSize}&pageNumber=${currentPage}`;
 
     try {
         const companiesResponse = await axios({
             method: "get",
-            url: `${API_BASE_URL}/api/company`,
+            url: `${API_BASE_URL}/api/company` + query,
             headers: { Authorization: "Bearer " + jwt_token },
         })
 
         return {
-            companies: companiesResponse.data
+            companies: companiesResponse.data.content,
+            nrOfPages: companiesResponse.data.totalPages || 0,
+            currentPage
         };
 
     } catch (axiosError) {
